@@ -59,7 +59,7 @@ document.addEventListener('turbolinks:load', function () {
           context.clearRect(0, 0, canvas.width, canvas.height);
           context.drawImage(image, 0, 0, canvas.width, canvas.height); // Draw content scaled
           console.log(image)
-          console.log(savedContent)
+          console.log(`after resize:${savedContent}`)
         };
       }
 
