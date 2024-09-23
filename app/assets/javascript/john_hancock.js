@@ -24,10 +24,11 @@ document.addEventListener('turbolinks:load', function () {
         image.src = savedSignature;
 
         image.onload = function () {
-          context.clearRect(0, 0, canvas.width, canvas.height);
-          context.drawImage(image, 0, 0);
-          console.log(image)
-          console.log(`first: ${savedSignature}`)
+          requestAnimationFrame(function () {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(image, 0, 0, canvas.width, canvas.height);
+            console.log('Image rendered');
+          });
         };
 
         image.onerror = function () {
