@@ -1,6 +1,7 @@
 //= require signature_pad
 
-document.addEventListener('DOMContentLoaded', function(){
+document.addEventListener('turbolinks:load', function () {
+  console.log('JS triggered')
   const allCanvas = document.querySelectorAll(".JohnHancock-canvas");
 
   allCanvas.forEach((canvas) => {
@@ -9,31 +10,68 @@ document.addEventListener('DOMContentLoaded', function(){
     let clear_canvas = wrapper.querySelector(".clear-canvas");
 
     if (hidden_field) {
-      const parent_form = canvas.closest("form");
       const signaturePad = new SignaturePad(canvas);
+      const base64Prefix = "data:image/png;base64,";
+      const savedSignature = hidden_field.value.startsWith(base64Prefix)
+          ? hidden_field.value
+          : base64Prefix + hidden_field.value;
 
-      parent_form.addEventListener('submit', function() {
-        hidden_field.value = signaturePad.toDataURL()
-      });
+      const context = canvas.getContext("2d");
 
-      function resizeCanvas() {
-        var ratio =  Math.max(window.devicePixelRatio || 1, 1);
-        canvas.width = canvas.offsetWidth * ratio;
-        canvas.height = canvas.offsetHeight * ratio;
-        canvas.getContext("2d").scale(ratio, ratio);
-        signaturePad.clear();
+      // Load existing signature if present
+      if (savedSignature) {
+        const image = new Image();
+        image.src = savedSignature;
+
+        image.onload = function () {
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(image, 0, 0);
+          console.log(image)
+          console.log(`first: ${savedSignature}`)
+        };
+
+        image.onerror = function () {
+          console.error("Failed to load the image.");
+        };
       }
 
-      window.addEventListener("resize", resizeCanvas, true);
-      resizeCanvas();
-    }
+      // Save signature on form submit
+      const parent_form = canvas.closest("form");
+      parent_form.addEventListener('submit', function () {
+        hidden_field.value = signaturePad.toDataURL();
+      });
 
-    clear_canvas?.addEventListener('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      var canvas = wrapper.querySelector(".JohnHancock-canvas");
-      var context = canvas.getContext("2d");
-      context.clearRect(0, 0, canvas.width, canvas.height);
-    });
+      function resizeCanvas(canvas, signaturePad) {
+        const savedContent = signaturePad.toDataURL(); // Save current canvas content
+
+        canvas.width = Math.min(500, $(window).width()); // Adjust this logic as needed
+        canvas.height = Math.min(300, $(window).height());
+
+        // Restore the canvas content
+        restoreCanvasContent(canvas, savedContent);
+      }
+
+      function restoreCanvasContent(canvas, savedContent) {
+        var image = new Image();
+        image.src = savedContent;
+
+        image.onload = function () {
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(image, 0, 0, canvas.width, canvas.height); // Draw content scaled
+          console.log(image)
+          console.log(`after resize:${savedContent}`)
+        };
+      }
+
+      window.addEventListener("resize", function () {
+        resizeCanvas(canvas, signaturePad); // Adjust this to match your current setup
+      });
+
+      clear_canvas?.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        context.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+      });
+    }
   });
-}, false)
+});
